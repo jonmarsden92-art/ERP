@@ -605,9 +605,18 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
 ══════════════════════════════════════════════════════════ -->
 <script>
 // ════════════════════════════════════════════════
-// FIREBASE CONFIG  ← Edit these or use setup UI
+// FIREBASE CONFIG
 // ════════════════════════════════════════════════
-let FIREBASE_CONFIG = null; // loaded from localStorage or setup form
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDymEwTuhkv5Hcq5Oz-5qsEJtQpBfS3Wv4",
+  authDomain: "kgerp-b29e4.firebaseapp.com",
+  projectId: "kgerp-b29e4",
+  storageBucket: "kgerp-b29e4.firebasestorage.app",
+  messagingSenderId: "158977021973",
+  appId: "1:158977021973:web:164719dd7b7812ba67d61c",
+  measurementId: "G-D719K4K9NF",
+  databaseURL: "https://kgerp-b29e4-default-rtdb.firebaseio.com" 
+};
 
 const ITEM_DB = {
   'Arc03':'Standard Architrave 70x20mm','Arc03 Primed':'Primed Beech Architrave',
@@ -2129,33 +2138,3 @@ function updateClock(){
 // BOOT
 // ════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',boot);
-<script type="module">
-      // 1. Import the Firebase functions from the Google CDN
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-
-      // 2. Your specific Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyDymEwTuhkv5Hcq5Oz-5qsEJtQpBfS3Wv4",
-        authDomain: "kgerp-b29e4.firebaseapp.com",
-        projectId: "kgerp-b29e4",
-        storageBucket: "kgerp-b29e4.firebasestorage.app",
-        messagingSenderId: "158977021973",
-        appId: "1:158977021973:web:164719dd7b7812ba67d61c",
-        measurementId: "G-D719K4K9NF"
-      };
-
-      // 3. Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
-
-      // 4. Your Boot function
-      function boot() {
-        console.log("Firebase is ready!");
-        // Put any code here that you want to run when the page loads
-      }
-
-      window.addEventListener('DOMContentLoaded', boot);
-    </script>
-  </body>
-</html>
