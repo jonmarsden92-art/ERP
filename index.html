@@ -707,11 +707,16 @@ let _onlineUsers={};
 // FIREBASE INIT
 // ════════════════════════════════════════════════
 async function initFirebase(cfg){
-  if(firebaseApp)try{firebaseApp.delete();}catch{}
-  firebaseApp=firebase.initializeApp(cfg,cfg.projectId+'-'+Date.now());
+  try{
+    // Try to get existing default app, else initialise
+    firebaseApp=firebase.app();
+  }catch(e){
+    firebaseApp=firebase.initializeApp(cfg);
+  }
   auth=firebaseApp.auth();
   db=firebaseApp.database();
-  await db.ref('.info/connected').once('value'); // test connection
+  // Set persistence so session survives page refresh
+  try{ await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(pe){ console.warn('Persistence not set:',pe); }
 }
 
 // ════════════════════════════════════════════════
@@ -730,7 +735,8 @@ async function doLogin(){
   try{
     await auth.signInWithEmailAndPassword(email,pass);
   }catch(e){
-    err.textContent=friendlyAuthError(e.code);
+    console.error('Login error:', e);
+    err.textContent=friendlyAuthError(e.code||e.message);
     btn.disabled=false;btn.textContent='Sign In →';
   }
 }
@@ -748,7 +754,7 @@ async function doRegister(){
     await db.ref('users/'+cred.user.uid).set({uid:cred.user.uid,name,email,role:'viewer',createdAt:Date.now(),lastSeen:Date.now(),active:true});
     await auditLog('REGISTER',{entity:'user',ref:email,desc:`New user registered: ${name}`});
     err.textContent='';
-  }catch(e){err.textContent=friendlyAuthError(e.code);}
+  }catch(e){console.error('Register error:',e);err.textContent=friendlyAuthError(e.code||e.message);}
 }
 
 function doLogout(){
@@ -764,13 +770,21 @@ function doLogout(){
 function friendlyAuthError(code){
   const m={
     'auth/wrong-password':'Incorrect password.',
-    'auth/user-not-found':'No account with that email.',
+    'auth/invalid-credential':'Incorrect email or password.',
+    'auth/invalid-password':'Incorrect password.',
+    'auth/user-not-found':'No account found with that email.',
     'auth/invalid-email':'Invalid email address.',
-    'auth/email-already-in-use':'Email already registered.',
-    'auth/too-many-requests':'Too many attempts. Try again later.',
+    'auth/email-already-in-use':'That email is already registered.',
+    'auth/too-many-requests':'Too many attempts — try again later.',
     'auth/network-request-failed':'Network error. Check your connection.',
+    'auth/user-disabled':'This account has been disabled.',
+    'auth/operation-not-allowed':'Email/password sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in method.',
+    'auth/configuration-not-found':'Firebase Authentication is not configured. Go to Firebase Console → Authentication → Get started → Enable Email/Password.',
+    'auth/internal-error':'Firebase internal error. Check your database URL is correct.',
+    'auth/app-not-authorized':'App not authorised. Check your Firebase project settings.',
   };
-  return m[code]||'Error: '+code;
+  if(!code) return 'Sign-in failed. Check your email and password.';
+  return m[code] || ('Sign-in error: ' + code);
 }
 
 // ════════════════════════════════════════════════
@@ -812,8 +826,9 @@ async function boot(){
       }
     });
   }catch(e){
-    console.error('Firebase error:',e);
-    document.getElementById('login-err').textContent='Connection error: '+e.message;
+    console.error('Firebase boot error:',e);
+    const msg = e.code ? friendlyAuthError(e.code) : ('Connection error: '+(e.message||String(e)));
+    document.getElementById('login-err').textContent=msg;
   }
 }
 
