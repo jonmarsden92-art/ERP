@@ -357,6 +357,8 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
     <div class="nav-item" data-page="stock" onclick="goto('stock',this)"><span class="nav-icon">📦</span><span class="nav-label">Stock</span><span class="nav-badge warn" id="badge-stock">0</span></div>
     <div class="nav-item" data-page="movements" onclick="goto('movements',this)"><span class="nav-icon">↕</span><span class="nav-label">Movements</span></div>
     <div class="nav-item" data-page="products" onclick="goto('products',this)"><span class="nav-icon">🏷</span><span class="nav-label">Products</span></div>
+    <div class="nav-item" data-page="pricing" onclick="goto('pricing',this)"><span class="nav-icon">💷</span><span class="nav-label">Pricing</span></div>
+    <div class="nav-item" data-page="invoices" onclick="goto('invoices',this)"><span class="nav-icon">🧾</span><span class="nav-label">Invoices</span><span class="nav-badge ok" id="badge-invoices">0</span></div>
     <div class="nav-div"></div>
     <div class="nav-sec">Contacts</div>
     <div class="nav-item" data-page="customers" onclick="goto('customers',this)"><span class="nav-icon">🏢</span><span class="nav-label">Customers</span></div>
@@ -379,11 +381,13 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
     <div class="spacer"></div>
     <button class="btn ghost sm" onclick="refreshDash()">↻</button>
   </div>
-  <div class="g4" id="kpi-row">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;" id="kpi-row">
     <div class="kpi c-accent"><div class="kpi-val" id="k-orders">—</div><div class="kpi-label">Active Orders</div><div class="kpi-sub" id="k-orders-s">—</div></div>
     <div class="kpi c-green"><div class="kpi-val" id="k-doors">—</div><div class="kpi-label">Doors This Month</div><div class="kpi-sub" id="k-doors-s">—</div></div>
     <div class="kpi c-blue"><div class="kpi-val" id="k-stock">—</div><div class="kpi-label">Stock Lines</div><div class="kpi-sub" id="k-stock-s">—</div></div>
     <div class="kpi c-red"><div class="kpi-val" id="k-low">—</div><div class="kpi-label">Low / Out of Stock</div><div class="kpi-sub" id="k-low-s">—</div></div>
+    <div class="kpi" style="border-color:var(--accent2);"><div class="kpi-val" id="k-revenue" style="color:var(--accent2);">—</div><div class="kpi-label">Revenue This Month</div><div class="kpi-sub" id="k-revenue-s">—</div></div>
+    <div class="kpi" style="border-color:var(--warn);"><div class="kpi-val" id="k-outstanding" style="color:var(--warn);">—</div><div class="kpi-label">Outstanding Balance</div><div class="kpi-sub" id="k-outstanding-s">—</div></div>
   </div>
   <div class="g2">
     <div class="card"><div class="card-hd"><span class="card-title">📋 Recent Orders</span><div class="spacer"></div><button class="btn ghost sm" onclick="goto('orders',null)">All →</button></div><div id="dash-orders"></div></div>
@@ -408,6 +412,56 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
     <button class="btn primary" onclick="openOrderModal()">+ New Order</button>
   </div>
   <div class="card"><div class="tbl-wrap"><table class="dt"><thead><tr><th>Order #</th><th>Customer</th><th>Project</th><th>Ref</th><th>Doors</th><th>Created</th><th>Delivery</th><th>Status</th><th>Owner</th><th>Actions</th></tr></thead><tbody id="orders-tbody"></tbody></table></div></div>
+</div>
+
+
+<!-- ══════ PRICING ══════ -->
+<div class="page" id="page-pricing">
+  <div class="pg-header">
+    <div><div class="pg-title">Pricing</div><div class="pg-sub">Unit prices for products & door types</div></div>
+    <div class="spacer"></div>
+    <input type="text" id="price-search" placeholder="Search…" class="mono" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--r);font-size:11px;width:180px;outline:none;" oninput="renderPricing()">
+    <button class="btn ghost" onclick="exportPricingXLSX()">📊 Export</button>
+    <button class="btn primary" onclick="openPriceModal()">+ Add Price</button>
+  </div>
+  <div class="g2" style="align-items:start;">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">💷 Product / Component Prices</span><span style="margin-left:auto;font-size:10px;color:var(--muted);">Cost + Margin = Sell</span></div>
+      <div class="tbl-wrap"><table class="dt"><thead><tr><th>Code</th><th>Description</th><th>Unit</th><th>Cost Price</th><th>Margin %</th><th>Sell Price</th><th>Last Updated</th><th>Actions</th></tr></thead><tbody id="pricing-tbody"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">🚪 Door Type Rates</span></div>
+      <div class="card-body" id="door-rates-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Set standard labour/supply rates per door type. These populate automatically when generating invoices from orders.</div>
+        <div id="door-rates-list"></div>
+        <button class="btn ghost sm" style="margin-top:10px;" onclick="saveDoorRates()">💾 Save Door Rates</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ INVOICES ══════ -->
+<div class="page" id="page-invoices">
+  <div class="pg-header">
+    <div><div class="pg-title">Invoices</div><div class="pg-sub">Billing & payment tracking</div></div>
+    <div class="spacer"></div>
+    <input type="text" id="inv-search" placeholder="Search…" class="mono" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--r);font-size:11px;width:180px;outline:none;" oninput="renderInvoices()">
+    <select id="inv-sf" class="mono" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:var(--r);font-size:11px;outline:none;" onchange="renderInvoices()">
+      <option value="">All</option><option>Draft</option><option>Sent</option><option>Partial</option><option>Paid</option><option>Overdue</option><option>Void</option>
+    </select>
+    <button class="btn success" onclick="exportInvoicesXLSX()">📊 Export</button>
+    <button class="btn primary" onclick="openInvoiceModal()">+ New Invoice</button>
+  </div>
+  <!-- Summary strip -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+    <div class="kpi c-accent"><div class="kpi-val" id="inv-k-total">£0</div><div class="kpi-label">Total Invoiced</div></div>
+    <div class="kpi c-warn"><div class="kpi-val" id="inv-k-outstanding">£0</div><div class="kpi-label">Outstanding</div></div>
+    <div class="kpi c-green"><div class="kpi-val" id="inv-k-paid">£0</div><div class="kpi-label">Paid</div></div>
+    <div class="kpi c-red"><div class="kpi-val" id="inv-k-overdue">£0</div><div class="kpi-label">Overdue</div></div>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap"><table class="dt"><thead><tr><th>Invoice #</th><th>Customer</th><th>Order Ref</th><th>Issue Date</th><th>Due Date</th><th>Net</th><th>VAT</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody id="invoices-tbody"></tbody></table></div>
+  </div>
 </div>
 
 <!-- ══════ DELIVERY NOTES ══════ -->
@@ -513,6 +567,10 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
     <div class="card"><div class="card-hd"><span class="card-title">⚠ Reorder Required</span></div><div id="rep-reorder"></div></div>
     <div class="card"><div class="card-hd"><span class="card-title">🔥 Top Component Usage</span></div><div class="card-body" id="rep-usage"></div></div>
   </div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><span class="card-title">🧾 Invoice Summary</span><div class="spacer"></div><button class="btn ghost sm" onclick="goto('invoices',null)">All Invoices →</button></div><div class="card-body" id="rep-invoices"></div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">💷 Revenue by Month</span></div><div class="card-body" id="rep-revenue"></div></div>
+  </div>
 </div>
 
 <!-- ══════ SETTINGS ══════ -->
@@ -530,6 +588,8 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
           <div class="fld"><label>Email</label><input id="set-email"></div>
           <div class="fld"><label>Default PM</label><input id="set-pm"></div>
           <div class="fld"><label>VAT Number</label><input id="set-vat"></div>
+          <div class="fld span2"><label>Bank Details (appears on invoices)</label><textarea id="set-bank" rows="2"></textarea></div>
+          <div class="fld span2"><label>Invoice Footer Text</label><textarea id="set-invfooter" rows="2"></textarea></div>
         </div>
         <button class="btn primary" style="margin-top:12px;" onclick="saveSettings()">Save Settings</button>
       </div>
@@ -638,7 +698,7 @@ let _sessionId=Math.random().toString(36).slice(2,10);
 let _currentPage='dashboard';
 let _currentDN=null;
 // local caches (from Firebase listeners)
-let _orders={}, _products={}, _stock={}, _movements=[], _customers={}, _suppliers={}, _users={}, _dns={}, _auditLog=[], _settings={};
+let _orders={}, _products={}, _stock={}, _movements=[], _customers={}, _suppliers={}, _users={}, _dns={}, _auditLog=[], _settings={}, _invoices={}, _pricing={};
 let _onlineUsers={};
 
 // Firebase config is hardcoded above
@@ -850,6 +910,14 @@ function setupListeners(){
   });
   // Settings
   db.ref('settings').on('value',snap=>{_settings=snap.val()||{};applySettings();});
+  // Invoices
+  db.ref('invoices').on('value',snap=>{
+    _invoices=snap.val()||{};
+    if(document.getElementById('page-invoices').classList.contains('active'))renderInvoices();
+    updateInvoiceBadges();refreshKPIs();
+  });
+  // Pricing
+  db.ref('pricing').on('value',snap=>{_pricing=snap.val()||{};if(document.getElementById('page-pricing').classList.contains('active'))renderPricing();});
   // Presence
   db.ref('presence').on('value',snap=>{_onlineUsers=snap.val()||{};renderPresence();});
 }
@@ -860,13 +928,13 @@ function teardownListeners(){
     db.ref('orders').off();db.ref('products').off();db.ref('stock').off();
     db.ref('movements').off();db.ref('customers').off();db.ref('suppliers').off();
     db.ref('users').off();db.ref('deliveryNotes').off();db.ref('audit').off();
-    db.ref('settings').off();db.ref('presence').off();
+    db.ref('settings').off();db.ref('presence').off();db.ref('invoices').off();db.ref('pricing').off();
   }catch{}
 }
 
 function applySettings(){
   const s=_settings;
-  ['company','division','address','phone','email','pm','vat'].forEach(k=>{
+  ['company','division','address','phone','email','pm','vat','bank','invfooter'].forEach(k=>{
     const el=document.getElementById('set-'+k);if(el&&s[k]!==undefined)el.value=s[k];
   });
 }
@@ -1000,7 +1068,14 @@ function refreshKPIs(){
   sv('k-doors',md);sv('k-doors-s',mo.length+' orders this month');
   sv('k-stock',prods.length);sv('k-stock-s',healthy+' healthy lines');
   sv('k-low',low.length);sv('k-low-s',out+' out of stock');
+  // Revenue KPIs
+  const invList=Object.values(_invoices);
+  const revMonth=invList.filter(i=>new Date(i.issueDate)>=nm).reduce((s,i)=>s+(i.total||0),0);
+  const outstanding=invList.filter(i=>!['Paid','Void'].includes(i.status)).reduce((s,i)=>s+((i.total||0)-(i.paid||0)),0);
+  sv('k-revenue',fmtMoney(revMonth));sv('k-revenue-s',invList.filter(i=>new Date(i.issueDate)>=nm).length+' invoices this month');
+  sv('k-outstanding',fmtMoney(outstanding));sv('k-outstanding-s',invList.filter(i=>!['Paid','Void'].includes(i.status)).length+' unpaid invoices');
   updateBadges();
+  updateInvoiceBadges();
 }
 function renderDash_orders(){
   const recent=Object.values(_orders).sort((a,b)=>b.createdAt-a.createdAt).slice(0,6);
@@ -1055,6 +1130,7 @@ function renderOrders(){
         <button class="row-btn" onclick="openOrderModal(_orders['${o.id}'])">Edit</button>
         <button class="row-btn" onclick="editOrderStatus('${o.id}')">Status</button>
         <button class="row-btn" onclick="createDNFromOrder('${o.id}')">🚚</button>
+        <button class="row-btn" onclick="createInvoiceFromOrder('${o.id}')">🧾</button>
         <button class="row-btn del" onclick="deleteOrder('${o.id}')">✕</button>
       </td>
     </tr>`;
@@ -1269,6 +1345,7 @@ function viewOrder(id){
     {label:'Edit',cls:'btn ghost',cb:`closeModal();openOrderModal(_orders['${id}'])`},
     {label:'Status',cls:'btn ghost',cb:`closeModal();editOrderStatus('${id}')`},
     {label:'Create DN',cls:'btn success',cb:`closeModal();createDNFromOrder('${id}')`},
+    {label:'🧾 Invoice',cls:'btn ghost',cb:`closeModal();createInvoiceFromOrder('${id}')`},
     {label:'Close',cls:'btn primary',cb:'closeModal()'}
   ]);
 }
@@ -1942,6 +2019,25 @@ function exportStockReport(){
   Object.values(_products).forEach(p=>{const s=_stock[p.code]||{qty:0,reserved:0};const av=Math.max(0,(s.qty||0)-(s.reserved||0));const status=(s.qty||0)<=0?'Out of Stock':(s.qty||0)<=p.reorderPoint?'Low Stock':'OK';data.push([p.code,p.description,p.category||'',s.qty||0,s.reserved||0,av,p.reorderPoint,p.reorderQty,status,s.lastAdjBy||'']);});
   const ws=XLSX.utils.aoa_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Stock');XLSX.writeFile(wb,`KG_Stock_${new Date().toISOString().split('T')[0]}.xlsx`);toast('Stock report exported','s');
 }
+  // Invoice summary
+  const iEl=g('rep-invoices');
+  if(iEl){
+    const invs=Object.values(_invoices);
+    const byStatus={};INV_STATUSES.forEach(s=>byStatus[s]={count:0,total:0});
+    invs.forEach(i=>{byStatus[i.status]=byStatus[i.status]||{count:0,total:0};byStatus[i.status].count++;byStatus[i.status].total+=(i.total||0);});
+    const colors={Draft:'var(--muted)',Sent:'var(--accent3)',Partial:'var(--warn)',Paid:'var(--accent2)',Overdue:'var(--danger)',Void:'var(--muted)'};
+    iEl.innerHTML=INV_STATUSES.map(s=>`<div class="prog-row"><div class="prog-label">${s}</div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round((byStatus[s]?.count||0)/Math.max(1,invs.length)*100)}%;background:${colors[s]}"></div></div><div class="prog-val">${fmtMoney(byStatus[s]?.total||0)}</div></div>`).join('')||'<div class="empty">No invoices</div>';
+  }
+  // Revenue by month (last 6)
+  const rvEl=g('rep-revenue');
+  if(rvEl){
+    const months={};
+    for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);const k=d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'});months[k]=0;}
+    Object.values(_invoices).forEach(inv=>{if(!inv.issueDate)return;const d=new Date(inv.issueDate);const k=d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'});if(months[k]!==undefined)months[k]+=(inv.total||0);});
+    const maxRev=Math.max(...Object.values(months),1);
+    rvEl.innerHTML=Object.entries(months).map(([m,v])=>`<div class="prog-row"><div class="prog-label" style="width:48px;">${m}</div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(v/maxRev*100)}%;background:var(--accent)"></div></div><div class="prog-val" style="width:68px;">${fmtMoney(v)}</div></div>`).join('');
+  }
+}
 function exportOrderReport(){
   const data=[['Order #','Customer','Project','Ref','Status','Doors','Created','Delivery','Owner']];
   Object.values(_orders).forEach(o=>{const d=(o.doors||[]).reduce((s,x)=>s+x.qty,0);data.push([o.orderNum,o.customerName||'',o.projectName||'',o.projectRef||'',o.status,d,fmt(o.createdAt),fmt(o.deliveryDate),_users[o.createdBy]?.name||'']);});
@@ -1949,11 +2045,582 @@ function exportOrderReport(){
 }
 
 // ════════════════════════════════════════════════
+// HELPERS — MONEY
+// ════════════════════════════════════════════════
+function fmtMoney(n){if(n===undefined||n===null||n==='')return'—';return'£'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function parseMoney(s){return parseFloat(String(s).replace(/[£,]/g,''))||0;}
+const VAT_RATE=0.20;
+
+// ════════════════════════════════════════════════
+// PRICING
+// ════════════════════════════════════════════════
+function renderPricing(){
+  const search=(g('price-search')?.value||'').toLowerCase();
+  const prods=Object.values(_products);
+  let rows=prods;
+  if(search)rows=rows.filter(r=>r.code.toLowerCase().includes(search)||r.description.toLowerCase().includes(search));
+  const tb=g('pricing-tbody');if(!tb)return;
+  tb.innerHTML=rows.length?rows.map(p=>{
+    const pr=_pricing[p.code]||{cost:0,margin:30,sell:0};
+    const margin=pr.margin||30;
+    const cost=pr.cost||0;
+    const sell=pr.sell||(cost*(1+margin/100));
+    return`<tr>
+      <td class="mono bold">${esc(p.code)}</td>
+      <td>${esc(p.description)}</td>
+      <td class="mono dim">${esc(p.unit||'ea')}</td>
+      <td class="mono">${fmtMoney(cost)}</td>
+      <td class="mono" style="color:var(--accent2);">${margin}%</td>
+      <td class="mono bold" style="color:var(--accent);">${fmtMoney(sell)}</td>
+      <td class="mono dim">${pr.updatedAt?relT(pr.updatedAt):'—'}</td>
+      <td><button class="row-btn" onclick="openPriceModal('${esc(p.code)}')">Edit</button></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="8"><div class="empty">No products. Add products first from the Products page.</div></td></tr>`;
+  renderDoorRates();
+}
+
+function renderDoorRates(){
+  const el=g('door-rates-list');if(!el)return;
+  const types=['Single FD30','Single FD60','Single NFR','Double FD30','Double FD60','Leaf & Half FD30','Leaf & Half FD60'];
+  const dr=_pricing['__doorRates']||{};
+  el.innerHTML=types.map(t=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="width:160px;font-size:11px;font-weight:700;">${t}</div>
+      <div class="fld" style="flex:1;gap:2px;"><label style="font-size:9px;">Supply (£)</label>
+        <input type="number" class="dr-supply" data-type="${esc(t)}" value="${dr[t]?.supply||''}" min="0" step="0.01" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;outline:none;width:100%;"></div>
+      <div class="fld" style="flex:1;gap:2px;"><label style="font-size:9px;">Install (£)</label>
+        <input type="number" class="dr-install" data-type="${esc(t)}" value="${dr[t]?.install||''}" min="0" step="0.01" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;outline:none;width:100%;"></div>
+      <div style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;width:80px;text-align:right;">${fmtMoney((dr[t]?.supply||0)+(dr[t]?.install||0))}</div>
+    </div>`).join('');
+}
+
+async function saveDoorRates(){
+  if(!hasRole('admin','manager')){toast('Manager+ required','e');return;}
+  const dr={};
+  document.querySelectorAll('.dr-supply').forEach(inp=>{
+    const t=inp.dataset.type;
+    const installEl=document.querySelector(`.dr-install[data-type="${t}"]`);
+    dr[t]={supply:parseFloat(inp.value)||0,install:parseFloat(installEl?.value)||0};
+  });
+  setSyncing(true);
+  await db.ref('pricing/__doorRates').set(dr);
+  await auditLog('UPDATE',{entity:'pricing',ref:'doorRates',desc:'Door rates updated'});
+  setSyncing(false);toast('Door rates saved','s');
+  renderDoorRates();
+}
+
+function openPriceModal(editCode){
+  if(!hasRole('admin','manager')){toast('Manager+ required','e');return;}
+  const p=editCode?_products[editCode]:null;
+  const pr=editCode?(_pricing[editCode]||{cost:0,margin:30}):null;
+  const prods=Object.values(_products);
+  const html=`
+    <div class="fg2">
+      <div class="fld span2"><label>Product</label>
+        ${editCode?`<input value="${esc(p?.code||editCode)} — ${esc(p?.description||'')}" readonly style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:var(--r);font-family:'DM Mono',monospace;font-size:12px;">`
+        :`<select id="pm2-code"><option value="">— Select Product —</option>${prods.map(pp=>`<option value="${pp.code}">${esc(pp.code)} — ${esc(pp.description)}</option>`).join('')}</select>`}
+      </div>
+      <div class="fld"><label>Cost Price (£)</label><input type="number" id="pm2-cost" value="${pr?.cost||0}" min="0" step="0.01" oninput="calcSellPrice()"></div>
+      <div class="fld"><label>Margin %</label><input type="number" id="pm2-margin" value="${pr?.margin||30}" min="0" max="100" step="0.5" oninput="calcSellPrice()"></div>
+      <div class="fld"><label>Sell Price (£) — auto-calculated</label><input type="number" id="pm2-sell" value="${pr?.sell||(pr?.cost*(1+(pr?.margin||30)/100))||0}" min="0" step="0.01" oninput="calcMarginFromSell()"></div>
+      <div class="fld"><label>Notes</label><input id="pm2-notes" value="${esc(pr?.notes||'')}"></div>
+    </div>
+    <div class="alert info" style="margin-top:10px;font-size:11px;">Sell price = Cost × (1 + Margin%). Edit either field — they stay in sync.</div>`;
+  showModal(editCode?`Edit Price: ${editCode}`:'Add Price','',html,[
+    {label:'Cancel',cls:'btn ghost',cb:'closeModal()'},
+    {label:'Save Price',cls:'btn primary',cb:`savePrice('${editCode||''}')` }
+  ]);
+}
+
+function calcSellPrice(){
+  const cost=parseFloat(g('pm2-cost')?.value)||0;
+  const margin=parseFloat(g('pm2-margin')?.value)||0;
+  const s=g('pm2-sell');if(s)s.value=(cost*(1+margin/100)).toFixed(2);
+}
+function calcMarginFromSell(){
+  const cost=parseFloat(g('pm2-cost')?.value)||0;
+  const sell=parseFloat(g('pm2-sell')?.value)||0;
+  const m=g('pm2-margin');if(m&&cost>0)m.value=((sell/cost-1)*100).toFixed(1);
+}
+
+async function savePrice(editCode){
+  if(!hasRole('admin','manager')){toast('Manager+ required','e');return;}
+  const code=editCode||g('pm2-code')?.value;
+  if(!code){toast('Select a product','e');return;}
+  const data={
+    code,cost:parseFloat(g('pm2-cost')?.value)||0,
+    margin:parseFloat(g('pm2-margin')?.value)||30,
+    sell:parseFloat(g('pm2-sell')?.value)||0,
+    notes:g('pm2-notes')?.value||'',
+    updatedAt:Date.now(),updatedBy:currentProfile?.name||'system'
+  };
+  setSyncing(true);
+  const before=_pricing[code];
+  await db.ref('pricing/'+code).set(data);
+  await auditLog('UPDATE',{entity:'pricing',ref:code,desc:`Price set: ${code} → £${data.sell.toFixed(2)}`,before:before?{sell:before.sell}:null,after:{sell:data.sell}});
+  setSyncing(false);closeModal();toast('Price saved','s');
+}
+
+async function exportPricingXLSX(){
+  const prods=Object.values(_products);
+  const data=[['Code','Description','Category','Unit','Cost £','Margin %','Sell £']];
+  prods.forEach(p=>{const pr=_pricing[p.code]||{cost:0,margin:30,sell:0};data.push([p.code,p.description,p.category||'',p.unit||'ea',pr.cost||0,pr.margin||30,pr.sell||0]);});
+  const ws=XLSX.utils.aoa_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Pricing');XLSX.writeFile(wb,`KG_Pricing_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('Pricing exported','s');
+}
+
+// ════════════════════════════════════════════════
+// INVOICES
+// ════════════════════════════════════════════════
+const INV_STATUSES=['Draft','Sent','Partial','Paid','Overdue','Void'];
+
+function updateInvoiceBadges(){
+  const invs=Object.values(_invoices);
+  const unpaid=invs.filter(i=>['Sent','Partial','Overdue'].includes(i.status)).length;
+  const b=g('badge-invoices');if(b){b.textContent=unpaid;b.className='nav-badge'+(unpaid>0?' warn':' ok');}
+  // Topbar invoice KPIs
+  const invK=(id,v)=>{const e=g(id);if(e)e.textContent=v;};
+  invK('inv-k-total',fmtMoney(invs.reduce((s,i)=>s+(i.total||0),0)));
+  const outstanding=invs.filter(i=>!['Paid','Void'].includes(i.status)).reduce((s,i)=>s+((i.total||0)-(i.paid||0)),0);
+  invK('inv-k-outstanding',fmtMoney(outstanding));
+  invK('inv-k-paid',fmtMoney(invs.reduce((s,i)=>s+(i.paid||0),0)));
+  const overdue=invs.filter(i=>i.status==='Overdue'||(!['Paid','Void'].includes(i.status)&&i.dueDate&&new Date(i.dueDate)<new Date())).reduce((s,i)=>s+((i.total||0)-(i.paid||0)),0);
+  invK('inv-k-overdue',fmtMoney(overdue));
+}
+
+function invStatusTag(s){
+  const m={Draft:'grey',Sent:'blue',Partial:'warn',Paid:'ok',Overdue:'err',Void:'grey'};
+  return`<span class="tag ${m[s]||'grey'}">${esc(s)}</span>`;
+}
+
+function renderInvoices(){
+  updateInvoiceBadges();
+  const search=(g('inv-search')?.value||'').toLowerCase();
+  const sf=g('inv-sf')?.value||'';
+  // Auto-flag overdue
+  const now=new Date();
+  let rows=Object.values(_invoices).sort((a,b)=>b.createdAt-a.createdAt);
+  // mark overdue
+  rows.forEach(inv=>{if(!['Paid','Void'].includes(inv.status)&&inv.dueDate&&new Date(inv.dueDate)<now&&inv.status!=='Overdue'){db.ref('invoices/'+inv.id+'/status').set('Overdue');}});
+  if(search)rows=rows.filter(r=>(r.invNum||'').toLowerCase().includes(search)||(r.customerName||'').toLowerCase().includes(search)||(r.orderRef||'').toLowerCase().includes(search));
+  if(sf)rows=rows.filter(r=>r.status===sf);
+  const tb=g('invoices-tbody');if(!tb)return;
+  const balance=i=>(i.total||0)-(i.paid||0);
+  tb.innerHTML=rows.length?rows.map(inv=>`<tr>
+    <td class="mono bold" style="color:var(--accent);">${esc(inv.invNum)}</td>
+    <td class="bold">${esc(inv.customerName||'—')}</td>
+    <td class="mono dim">${esc(inv.orderRef||'—')}</td>
+    <td class="mono dim">${fmt(inv.issueDate)}</td>
+    <td class="mono dim" style="color:${inv.dueDate&&new Date(inv.dueDate)<now&&!['Paid','Void'].includes(inv.status)?'var(--danger)':'inherit'}">${fmt(inv.dueDate)}</td>
+    <td class="mono">${fmtMoney(inv.net)}</td>
+    <td class="mono dim">${fmtMoney(inv.vat)}</td>
+    <td class="mono bold">${fmtMoney(inv.total)}</td>
+    <td class="mono" style="color:var(--accent2);">${fmtMoney(inv.paid)}</td>
+    <td class="mono bold" style="color:${balance(inv)>0?'var(--warn)':'var(--accent2)'};">${fmtMoney(balance(inv))}</td>
+    <td>${invStatusTag(inv.status)}</td>
+    <td style="white-space:nowrap;">
+      <button class="row-btn" onclick="viewInvoice('${inv.id}')">View</button>
+      <button class="row-btn" onclick="openInvoiceModal(_invoices['${inv.id}'])">Edit</button>
+      <button class="row-btn" onclick="recordPayment('${inv.id}')">£ Pay</button>
+      <button class="row-btn" onclick="exportInvoicePDF('${inv.id}')">PDF</button>
+      <button class="row-btn del" onclick="voidInvoice('${inv.id}')">Void</button>
+    </td>
+  </tr>`).join(''):`<tr><td colspan="12"><div class="empty">No invoices yet. Create one from an order or manually.</div></td></tr>`;
+}
+
+function openInvoiceModal(prefill){
+  if(!hasRole('admin','manager')){toast('Manager+ required','e');return;}
+  const orders=Object.values(_orders);
+  const custs=Object.values(_customers);
+  const isEdit=!!(prefill?.id);
+  const html=`
+    <div class="tabs">
+      <div class="tab active" onclick="invTab('details',this)">Details</div>
+      <div class="tab" onclick="invTab('lines',this)">Line Items</div>
+      <div class="tab" onclick="invTab('notes',this)">Notes & Terms</div>
+    </div>
+    <div class="tab-panel active" id="invtab-details" style="padding-top:12px;">
+      <div class="fg2">
+        <div class="fld"><label>Customer</label>
+          <select id="im-cust" onchange="fillInvCust()">${custs.map(c=>`<option value="${c.id}"${c.id===prefill?.customerId?' selected':''}>${esc(c.company)}</option>`).join('')}</select>
+        </div>
+        <div class="fld"><label>Link to Order (optional)</label>
+          <select id="im-order" onchange="fillInvFromOrder()"><option value="">— Standalone —</option>${orders.map(o=>`<option value="${o.id}"${o.id===prefill?.orderId?' selected':''}>${esc(o.orderNum)} — ${esc(o.projectName)}</option>`).join('')}</select>
+        </div>
+        <div class="fld"><label>Invoice Status</label>
+          <select id="im-status">${INV_STATUSES.map(s=>`<option${s===(prefill?.status||'Draft')?' selected':''}>${s}</option>`).join('')}</select>
+        </div>
+        <div class="fld"><label>PO Reference</label><input id="im-po" value="${esc(prefill?.poRef||'')}"></div>
+        <div class="fld"><label>Issue Date</label><input type="date" id="im-issue" value="${prefill?.issueDate||new Date().toISOString().split('T')[0]}"></div>
+        <div class="fld"><label>Due Date</label><input type="date" id="im-due" value="${prefill?.dueDate||''}"></div>
+        <div class="fld"><label>VAT Rate %</label><input type="number" id="im-vat" value="${prefill?.vatRate!==undefined?prefill.vatRate:20}" min="0" max="100" oninput="calcInvTotals()"></div>
+        <div class="fld"><label>Discount %</label><input type="number" id="im-disc" value="${prefill?.discountPct||0}" min="0" max="100" oninput="calcInvTotals()"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;padding:12px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+        <div><div style="font-size:10px;color:var(--muted);">Net</div><div style="font-size:18px;font-weight:800;color:var(--text);font-family:'DM Mono',monospace;" id="im-net-disp">£0.00</div></div>
+        <div><div style="font-size:10px;color:var(--muted);">VAT</div><div style="font-size:18px;font-weight:800;color:var(--text2);font-family:'DM Mono',monospace;" id="im-vat-disp">£0.00</div></div>
+        <div><div style="font-size:10px;color:var(--muted);">Total</div><div style="font-size:18px;font-weight:800;color:var(--accent);font-family:'DM Mono',monospace;" id="im-total-disp">£0.00</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="invtab-lines" style="padding-top:12px;">
+      <div style="overflow-x:auto;"><table class="dt iet"><thead><tr><th>Description</th><th>Qty</th><th>Unit Price £</th><th>Disc %</th><th>Line Total £</th><th></th></tr></thead><tbody id="im-lines-tbody"></tbody></table></div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn ghost sm" onclick="addInvLine()">+ Line</button>
+        <button class="btn info sm" onclick="fillLinesFromOrder()">⚡ Import from Order</button>
+      </div>
+    </div>
+    <div class="tab-panel" id="invtab-notes" style="padding-top:12px;">
+      <div class="fg2">
+        <div class="fld span2"><label>Payment Terms</label><input id="im-terms" value="${esc(prefill?.terms||'Net 30 days')}"></div>
+        <div class="fld span2"><label>Invoice Notes</label><textarea id="im-notes" rows="3">${esc(prefill?.notes||'')}</textarea></div>
+        <div class="fld span2"><label>Footer / Bank Details</label><textarea id="im-footer" rows="3">${esc(prefill?.footer||_settings.bankDetails||'Bank: Barclays | Sort Code: 00-00-00 | Account: 00000000')}</textarea></div>
+      </div>
+    </div>`;
+  showModal(isEdit?`Edit Invoice ${prefill.invNum}`:'New Invoice','',html,[
+    {label:'Cancel',cls:'btn ghost',cb:'closeModal()'},
+    {label:isEdit?'Update Invoice':'Create Invoice',cls:'btn primary',cb:`saveInvoiceModal('${prefill?.id||''}')` }
+  ]);
+  window._invLines=prefill?JSON.parse(JSON.stringify(prefill.lines||[])):[{desc:'',qty:1,unitPrice:0,disc:0,lineTotal:0}];
+  renderInvLines();
+  setTimeout(()=>calcInvTotals(),50);
+}
+
+function invTab(n,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');g('invtab-'+n).classList.add('active');
+}
+
+function fillInvCust(){
+  const sel=g('im-order');if(!sel)return;
+  // Just keep cust selection — don't auto-clear order
+}
+
+function fillInvFromOrder(){
+  const oid=g('im-order')?.value;if(!oid)return;
+  const o=_orders[oid];if(!o)return;
+  // Set customer
+  const cs=g('im-cust');if(cs&&o.customerId)cs.value=o.customerId;
+  if(!g('im-po')?.value&&o.salesOrderRef){const e=g('im-po');if(e)e.value=o.salesOrderRef;}
+  if(!g('im-due')?.value&&o.deliveryDate){
+    const due=new Date(o.deliveryDate);due.setDate(due.getDate()+30);
+    const e=g('im-due');if(e)e.value=due.toISOString().split('T')[0];
+  }
+}
+
+function fillLinesFromOrder(){
+  const oid=g('im-order')?.value;if(!oid){toast('Select an order first','w');return;}
+  const o=_orders[oid];if(!o){return;}
+  const lines=[];
+  // Add door lines using door rates
+  const dr=_pricing['__doorRates']||{};
+  const doorGroups={};
+  (o.doors||[]).forEach(d=>{
+    const key=`${d.type} ${d.fire}`;
+    doorGroups[key]=(doorGroups[key]||0)+d.qty;
+  });
+  Object.entries(doorGroups).forEach(([k,qty])=>{
+    const rate=dr[k];
+    const supply=rate?.supply||0;
+    const install=rate?.install||0;
+    if(supply>0)lines.push({desc:`${k} Fire Door — Supply`,qty,unitPrice:supply,disc:0,lineTotal:qty*supply});
+    if(install>0)lines.push({desc:`${k} Fire Door — Installation`,qty,unitPrice:install,disc:0,lineTotal:qty*install});
+  });
+  // Add component lines with pricing
+  (o.comps||[]).filter(c=>c.qty>0&&c.code).forEach(c=>{
+    const pr=_pricing[c.code];
+    const sell=pr?.sell||0;
+    const desc=ITEM_DB[c.code]||c.code;
+    lines.push({desc:`${c.code} — ${desc}`,qty:c.qty,unitPrice:sell,disc:0,lineTotal:c.qty*sell});
+  });
+  if(!lines.length){toast('No door rates or component prices set — add pricing first','w');return;}
+  window._invLines=lines;renderInvLines();calcInvTotals();
+  toast(`${lines.length} lines imported from order`,'s');
+}
+
+window._invLines=[];
+function renderInvLines(){
+  const tb=g('im-lines-tbody');if(!tb)return;
+  tb.innerHTML=(window._invLines||[]).map((r,i)=>`<tr>
+    <td><input type="text" value="${esc(r.desc||'')}" style="width:220px;" oninput="window._invLines[${i}].desc=this.value"></td>
+    <td><input type="number" value="${r.qty||1}" min="0" step="0.01" style="width:58px;" oninput="window._invLines[${i}].qty=+this.value;calcInvLineTotal(${i})"></td>
+    <td><input type="number" value="${r.unitPrice||0}" min="0" step="0.01" style="width:80px;" oninput="window._invLines[${i}].unitPrice=+this.value;calcInvLineTotal(${i})"></td>
+    <td><input type="number" value="${r.disc||0}" min="0" max="100" step="0.5" style="width:52px;" oninput="window._invLines[${i}].disc=+this.value;calcInvLineTotal(${i})"></td>
+    <td class="mono bold" style="color:var(--accent);">${fmtMoney(r.lineTotal||0)}</td>
+    <td><button class="btn danger sm" style="padding:2px 6px;" onclick="window._invLines.splice(${i},1);renderInvLines();calcInvTotals()">✕</button></td>
+  </tr>`).join('');
+  calcInvTotals();
+}
+function addInvLine(){window._invLines.push({desc:'',qty:1,unitPrice:0,disc:0,lineTotal:0});renderInvLines();}
+function calcInvLineTotal(i){
+  const r=window._invLines[i];
+  r.lineTotal=r.qty*r.unitPrice*(1-(r.disc||0)/100);
+  const tbs=g('im-lines-tbody')?.querySelectorAll('tr');
+  if(tbs&&tbs[i]){const cells=tbs[i].querySelectorAll('td');if(cells[4])cells[4].textContent=fmtMoney(r.lineTotal);}
+  calcInvTotals();
+}
+function calcInvTotals(){
+  const lines=window._invLines||[];
+  const subtotal=lines.reduce((s,r)=>s+(r.lineTotal||0),0);
+  const discPct=parseFloat(g('im-disc')?.value)||0;
+  const net=subtotal*(1-discPct/100);
+  const vatRate=parseFloat(g('im-vat')?.value)||20;
+  const vat=net*(vatRate/100);
+  const total=net+vat;
+  const sv=(id,v)=>{const e=g(id);if(e)e.textContent=v;};
+  sv('im-net-disp',fmtMoney(net));sv('im-vat-disp',fmtMoney(vat));sv('im-total-disp',fmtMoney(total));
+}
+
+async function saveInvoiceModal(editId){
+  if(!hasRole('admin','manager')){toast('Manager+ required','e');return;}
+  const custId=g('im-cust')?.value||'';
+  const cust=_customers[custId];
+  const lines=JSON.parse(JSON.stringify(window._invLines||[]));
+  const subtotal=lines.reduce((s,r)=>s+(r.lineTotal||0),0);
+  const discPct=parseFloat(g('im-disc')?.value)||0;
+  const net=subtotal*(1-discPct/100);
+  const vatRate=parseFloat(g('im-vat')?.value)||20;
+  const vat=net*(vatRate/100);
+  const total=net+vat;
+  const oid=g('im-order')?.value||'';
+  const order=oid?_orders[oid]:null;
+  const data={
+    customerId:custId,customerName:cust?.company||'',orderId:oid,
+    orderRef:order?.orderNum||'',projectName:order?.projectName||'',
+    poRef:g('im-po')?.value||'',
+    issueDate:g('im-issue')?.value||new Date().toISOString().split('T')[0],
+    dueDate:g('im-due')?.value||'',
+    status:g('im-status')?.value||'Draft',
+    vatRate,discountPct:discPct,
+    lines,net:parseFloat(net.toFixed(2)),vat:parseFloat(vat.toFixed(2)),total:parseFloat(total.toFixed(2)),
+    paid:editId?(_invoices[editId]?.paid||0):0,
+    terms:g('im-terms')?.value||'Net 30 days',
+    notes:g('im-notes')?.value||'',footer:g('im-footer')?.value||'',
+    updatedAt:Date.now(),updatedBy:currentUser.uid,
+  };
+  setSyncing(true);
+  try{
+    if(editId){
+      const before=_invoices[editId];
+      await db.ref('invoices/'+editId).update(data);
+      await auditLog('UPDATE',{entity:'invoice',ref:_invoices[editId]?.invNum||editId,desc:`Invoice updated: £${total.toFixed(2)}`,before:{total:before?.total,status:before?.status},after:{total:data.total,status:data.status}});
+      toast('Invoice updated','s');
+    } else {
+      const seqSnap=await db.ref('_seq/inv').transaction(v=>(v||0)+1);
+      const seq=seqSnap.snapshot.val();
+      const invNum=`INV-${new Date().getFullYear()}-${String(seq).padStart(4,'0')}`;
+      const id=uid();
+      const newInv={...data,id,invNum,createdAt:Date.now(),createdBy:currentUser.uid,createdByName:currentProfile.name};
+      await db.ref('invoices/'+id).set(newInv);
+      await auditLog('CREATE',{entity:'invoice',ref:invNum,desc:`Invoice created: £${total.toFixed(2)} for ${data.customerName}`,after:{invNum,total:data.total,status:data.status}});
+      toast(`${invNum} created`,'s');
+    }
+    closeModal();
+  }catch(e){toast('Error: '+e.message,'e');}
+  setSyncing(false);
+}
+
+function recordPayment(id){
+  const inv=_invoices[id];if(!inv)return;
+  const balance=(inv.total||0)-(inv.paid||0);
+  const html=`
+    <div style="margin-bottom:12px;padding:12px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+      <div style="font-size:12px;font-weight:700;">${esc(inv.invNum)} — ${esc(inv.customerName)}</div>
+      <div style="font-size:11px;color:var(--muted);">Total: ${fmtMoney(inv.total)} | Paid: ${fmtMoney(inv.paid)} | <strong style="color:var(--warn);">Balance: ${fmtMoney(balance)}</strong></div>
+    </div>
+    <div class="fg2">
+      <div class="fld"><label>Payment Amount (£)</label><input type="number" id="pay-amt" value="${balance.toFixed(2)}" min="0" step="0.01"></div>
+      <div class="fld"><label>Payment Date</label><input type="date" id="pay-date" value="${new Date().toISOString().split('T')[0]}"></div>
+      <div class="fld"><label>Payment Method</label><select id="pay-method"><option>BACS</option><option>Cheque</option><option>Card</option><option>Cash</option><option>Other</option></select></div>
+      <div class="fld"><label>Reference</label><input id="pay-ref" placeholder="Bank ref, cheque number…"></div>
+    </div>`;
+  showModal('Record Payment',`${esc(inv.invNum)} — Balance: ${fmtMoney(balance)}`,html,[
+    {label:'Cancel',cls:'btn ghost',cb:'closeModal()'},
+    {label:'Record Payment',cls:'btn success',cb:`applyPayment('${id}')` }
+  ]);
+}
+
+async function applyPayment(id){
+  if(!hasRole('admin','manager')){toast('Manager+ required','e');return;}
+  const inv=_invoices[id];if(!inv)return;
+  const amt=parseFloat(g('pay-amt')?.value)||0;
+  if(amt<=0){toast('Invalid amount','e');return;}
+  const newPaid=Math.min((inv.paid||0)+amt, inv.total||0);
+  const newStatus=newPaid>=(inv.total||0)?'Paid':newPaid>0?'Partial':inv.status;
+  setSyncing(true);
+  await db.ref('invoices/'+id).update({paid:parseFloat(newPaid.toFixed(2)),status:newStatus,updatedAt:Date.now()});
+  // Payment history
+  await db.ref('invoices/'+id+'/payments').push({amt:parseFloat(amt.toFixed(2)),date:g('pay-date')?.value,method:g('pay-method')?.value,ref:g('pay-ref')?.value||'',recordedBy:currentProfile.name,ts:Date.now()});
+  await auditLog('UPDATE',{entity:'invoice',ref:inv.invNum,desc:`Payment recorded: £${amt.toFixed(2)} via ${g('pay-method')?.value||''} — status → ${newStatus}`,before:{paid:inv.paid,status:inv.status},after:{paid:newPaid,status:newStatus}});
+  setSyncing(false);closeModal();toast(`£${amt.toFixed(2)} recorded — ${newStatus}`,'s');
+}
+
+async function voidInvoice(id){
+  if(!hasRole('admin')){toast('Admin required','e');return;}
+  if(!confirm('Void this invoice? This cannot be undone.'))return;
+  const inv=_invoices[id];
+  setSyncing(true);
+  await db.ref('invoices/'+id+'/status').set('Void');
+  await auditLog('UPDATE',{entity:'invoice',ref:inv?.invNum||id,desc:'Invoice voided',before:{status:inv?.status},after:{status:'Void'}});
+  setSyncing(false);toast('Invoice voided');
+}
+
+function viewInvoice(id){
+  const inv=_invoices[id];if(!inv)return;
+  const payments=inv.payments?Object.values(inv.payments):[];
+  const html=`
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+      <div><div style="font-size:20px;font-weight:800;color:var(--accent);">${esc(inv.invNum)}</div>
+        <div class="mono dim">${esc(inv.customerName)} · ${esc(inv.orderRef||'No order linked')}</div></div>
+      ${invStatusTag(inv.status)}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:var(--surface2);padding:10px;border-radius:var(--r);border:1px solid var(--border);">
+        <div style="font-size:9px;color:var(--muted);">NET</div><div style="font-size:20px;font-weight:800;font-family:'DM Mono',monospace;">${fmtMoney(inv.net)}</div></div>
+      <div style="background:var(--surface2);padding:10px;border-radius:var(--r);border:1px solid var(--border);">
+        <div style="font-size:9px;color:var(--muted);">VAT (${inv.vatRate||20}%)</div><div style="font-size:20px;font-weight:800;font-family:'DM Mono',monospace;color:var(--text2);">${fmtMoney(inv.vat)}</div></div>
+      <div style="background:var(--surface2);padding:10px;border-radius:var(--r);border:1px solid var(--border);">
+        <div style="font-size:9px;color:var(--muted);">TOTAL</div><div style="font-size:20px;font-weight:800;font-family:'DM Mono',monospace;color:var(--accent);">${fmtMoney(inv.total)}</div></div>
+    </div>
+    <div style="font-size:11px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <div><span class="dim">Issue Date:</span> ${fmt(inv.issueDate)}</div>
+      <div><span class="dim">Due Date:</span> <strong>${fmt(inv.dueDate)}</strong></div>
+      <div><span class="dim">PO Ref:</span> ${esc(inv.poRef||'—')}</div>
+      <div><span class="dim">Terms:</span> ${esc(inv.terms||'—')}</div>
+      <div><span class="dim">Paid:</span> <strong style="color:var(--accent2);">${fmtMoney(inv.paid)}</strong></div>
+      <div><span class="dim">Balance:</span> <strong style="color:var(--warn);">${fmtMoney((inv.total||0)-(inv.paid||0))}</strong></div>
+    </div>
+    ${payments.length?`<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Payment History</div>
+    ${payments.map(p=>`<div style="display:flex;gap:8px;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border);"><span class="mono" style="color:var(--accent2);">+${fmtMoney(p.amt)}</span><span>${p.date||''}</span><span class="dim">${p.method||''}</span><span class="dim">${esc(p.ref||'')}</span><span class="dim">${esc(p.recordedBy||'')}</span></div>`).join('')}</div>`:''}`;
+  showModal('Invoice Details','',html,[
+    {label:'Edit',cls:'btn ghost',cb:`closeModal();openInvoiceModal(_invoices['${id}'])`},
+    {label:'Record Payment',cls:'btn success',cb:`closeModal();recordPayment('${id}')`},
+    {label:'PDF',cls:'btn info',cb:`exportInvoicePDF('${id}')`},
+    {label:'Close',cls:'btn primary',cb:'closeModal()'}
+  ]);
+}
+
+function exportInvoicePDF(id){
+  const inv=_invoices[id];if(!inv){toast('Invoice not found','e');return;}
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pw=doc.internal.pageSize.getWidth(),mg=14;
+    const s=_settings||{};
+    let y=mg;
+    // Header bar
+    doc.setFillColor(28,28,28);doc.rect(0,0,pw,18,'F');
+    doc.setTextColor(233,200,74);doc.setFontSize(15);doc.setFont('helvetica','bold');
+    doc.text(s.company||'Kingsway Group',mg,11);
+    doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.text((s.division||'Door Systems Division').toUpperCase(),mg,16);
+    doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text('INVOICE',pw-mg,10,{align:'right'});
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(200,200,200);
+    doc.text(inv.invNum,pw-mg,15,{align:'right'});
+    y=24;
+    // Company & Invoice meta
+    const half=(pw-mg*2-6)/2;
+    // Left: Bill To
+    doc.setFillColor(246,246,246);doc.rect(mg,y,half,32,'F');
+    doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(150,150,150);
+    doc.text('BILL TO',mg+3,y+5);
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(30,30,30);
+    doc.text(inv.customerName||'',mg+3,y+11);
+    const cust=_customers[inv.customerId];
+    if(cust){
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(80,80,80);
+      [cust.contact,cust.addr1,[cust.town,cust.postcode].filter(Boolean).join(', '),cust.email].filter(Boolean).forEach((line,li)=>{doc.text(line,mg+3,y+17+li*4.5);});
+    }
+    // Right: Invoice details
+    const rx=mg+half+6;
+    doc.setFillColor(40,40,40);doc.rect(rx,y,half,32,'F');
+    const rows2=[['Invoice No:',inv.invNum],['Issue Date:',fmt(inv.issueDate)],['Due Date:',fmt(inv.dueDate)],['PO Ref:',inv.poRef||'—'],['Terms:',inv.terms||'Net 30 days'],['Status:',inv.status]];
+    rows2.forEach(([l,v],ri)=>{
+      doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(160,160,160);doc.text(l,rx+3,y+6+ri*4.8);
+      doc.setFont('helvetica','normal');doc.setTextColor(255,255,255);
+      if(l==='Status:'){doc.setTextColor(inv.status==='Paid'?78:inv.status==='Overdue'?255:233,inv.status==='Paid'?207:inv.status==='Overdue'?87:200,inv.status==='Paid'?150:inv.status==='Overdue'?87:74);}
+      doc.text(String(v||'—'),rx+half-3,y+6+ri*4.8,{align:'right'});
+    });
+    y+=37;
+    // Line items
+    const lineData=(inv.lines||[]).map(r=>[r.desc||'',String(r.qty||0),fmtMoney(r.unitPrice),(r.disc||0)+'%',fmtMoney(r.lineTotal)]);
+    doc.autoTable({
+      head:[['Description','Qty','Unit Price','Disc','Line Total']],
+      body:lineData.length?lineData:[['No line items','','','','']],
+      startY:y,margin:{left:mg,right:mg},
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:[28,28,28],textColor:255,fontStyle:'bold',fontSize:7.5},
+      alternateRowStyles:{fillColor:[250,250,250]},
+      columnStyles:{0:{cellWidth:'auto'},1:{cellWidth:15,halign:'center'},2:{cellWidth:25,halign:'right'},3:{cellWidth:15,halign:'center'},4:{cellWidth:28,halign:'right',fontStyle:'bold'}},
+    });
+    y=doc.lastAutoTable.finalY+5;
+    // Totals box
+    const tw=70;const tx=pw-mg-tw;
+    const totRows=[['Net Amount:',fmtMoney(inv.net)],['VAT ('+inv.vatRate+'%):',fmtMoney(inv.vat)]];
+    if(inv.discountPct)totRows.unshift(['Discount ('+inv.discountPct+'%):','-'+fmtMoney(inv.net*(inv.discountPct||0)/100)]);
+    doc.setDrawColor(200,200,200);doc.setFillColor(250,250,250);doc.rect(tx,y,tw,totRows.length*7+14,'FD');
+    totRows.forEach(([l,v],ri)=>{
+      doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);doc.text(l,tx+3,y+6+ri*7);
+      doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text(v,tx+tw-3,y+6+ri*7,{align:'right'});
+    });
+    const totalY=y+totRows.length*7+2;
+    doc.setFillColor(28,28,28);doc.rect(tx,totalY,tw,12,'F');
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(233,200,74);
+    doc.text('TOTAL:',tx+3,totalY+7.5);doc.text(fmtMoney(inv.total),tx+tw-3,totalY+7.5,{align:'right'});
+    if((inv.paid||0)>0){
+      doc.setFillColor(30,58,46);doc.rect(tx,totalY+12,tw,10,'F');
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(78,207,150);
+      doc.text('PAID:',tx+3,totalY+18.5);doc.text(fmtMoney(inv.paid||0),tx+tw-3,totalY+18.5,{align:'right'});
+      doc.setFillColor(58,40,20);doc.rect(tx,totalY+22,tw,10,'F');
+      doc.setTextColor(255,171,64);
+      doc.text('BALANCE:',tx+3,totalY+28.5);doc.text(fmtMoney((inv.total||0)-(inv.paid||0)),tx+tw-3,totalY+28.5,{align:'right'});
+    }
+    // Notes & footer
+    y=Math.max(y+totRows.length*7+40,doc.lastAutoTable.finalY+50);
+    if(inv.notes){
+      doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(100,100,100);doc.text('NOTES:',mg,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+      const noteLines=doc.splitTextToSize(inv.notes,pw-mg*2-tw-10);
+      doc.text(noteLines,mg,y+5);
+    }
+    const pgH=doc.internal.pageSize.getHeight();
+    doc.setFillColor(28,28,28);doc.rect(0,pgH-14,pw,14,'F');
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(160,160,160);
+    const footLines=doc.splitTextToSize(inv.footer||s.bankDetails||'',pw-mg*2);
+    doc.text(footLines,mg,pgH-9);
+    doc.setTextColor(100,100,100);doc.text(inv.invNum+' · Generated '+new Date().toLocaleDateString('en-GB'),pw-mg,pgH-4,{align:'right',fontSize:6});
+    doc.save(`${inv.invNum}_${(inv.customerName||'').replace(/\s+/g,'_')}.pdf`);
+    toast('Invoice PDF exported','s');
+  }catch(e){toast('PDF error: '+e.message,'e');console.error(e);}
+}
+
+async function exportInvoicesXLSX(){
+  const data=[['Invoice #','Customer','Order Ref','Issue Date','Due Date','Net','VAT','Total','Paid','Balance','Status']];
+  Object.values(_invoices).sort((a,b)=>b.createdAt-a.createdAt).forEach(i=>{data.push([i.invNum,i.customerName||'',i.orderRef||'',fmt(i.issueDate),fmt(i.dueDate),i.net||0,i.vat||0,i.total||0,i.paid||0,(i.total||0)-(i.paid||0),i.status]);});
+  const ws=XLSX.utils.aoa_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invoices');XLSX.writeFile(wb,`KG_Invoices_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('Invoices exported','s');
+}
+
+// Also add "Create Invoice" button to order view  
+function createInvoiceFromOrder(orderId){
+  const o=_orders[orderId];if(!o)return;
+  goto('invoices',document.querySelector('[data-page="invoices"]'));
+  setTimeout(()=>{
+    openInvoiceModal(null);
+    setTimeout(()=>{
+      const s=g('im-order');if(s){s.value=orderId;fillInvFromOrder();}
+      const cs=g('im-cust');if(cs&&o.customerId)cs.value=o.customerId;
+    },100);
+  },200);
+}
+
+// ════════════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════════════
 async function saveSettings(){
   if(!hasRole('admin')){toast('Admin required','e');return;}
-  const s={company:g('set-company')?.value||'Kingsway Group',division:g('set-division')?.value||'',address:g('set-address')?.value||'',phone:g('set-phone')?.value||'',email:g('set-email')?.value||'',pm:g('set-pm')?.value||'',vat:g('set-vat')?.value||''};
+  const s={company:g('set-company')?.value||'Kingsway Group',division:g('set-division')?.value||'',address:g('set-address')?.value||'',phone:g('set-phone')?.value||'',email:g('set-email')?.value||'',pm:g('set-pm')?.value||'',vat:g('set-vat')?.value||'',bankDetails:g('set-bank')?.value||'',invFooter:g('set-invfooter')?.value||''};
   setSyncing(true);
   await db.ref('settings').update(s);
   await auditLog('UPDATE',{entity:'settings',ref:'company',desc:'Company settings updated'});
