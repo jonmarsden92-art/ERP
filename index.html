@@ -1005,7 +1005,8 @@ function goto(page,el){
 function renderPage(p){
   const map={dashboard:refreshDash,orders:renderOrders,stock:renderStock,movements:renderMovements,
     products:renderProducts,customers:renderCustomers,suppliers:renderSuppliers,
-    audit:renderAudit,users:renderUsers,reports:renderReports,dn:renderDNList,settings:()=>{}};
+    audit:renderAudit,users:renderUsers,reports:renderReports,dn:renderDNList,settings:()=>{},
+    pricing:renderPricing,invoices:renderInvoices};
   if(map[p])map[p]();
 }
 
@@ -2037,7 +2038,6 @@ function exportStockReport(){
     const maxRev=Math.max(...Object.values(months),1);
     rvEl.innerHTML=Object.entries(months).map(([m,v])=>`<div class="prog-row"><div class="prog-label" style="width:48px;">${m}</div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(v/maxRev*100)}%;background:var(--accent)"></div></div><div class="prog-val" style="width:68px;">${fmtMoney(v)}</div></div>`).join('');
   }
-}
 function exportOrderReport(){
   const data=[['Order #','Customer','Project','Ref','Status','Doors','Created','Delivery','Owner']];
   Object.values(_orders).forEach(o=>{const d=(o.doors||[]).reduce((s,x)=>s+x.qty,0);data.push([o.orderNum,o.customerName||'',o.projectName||'',o.projectRef||'',o.status,d,fmt(o.createdAt),fmt(o.deliveryDate),_users[o.createdBy]?.name||'']);});
@@ -2699,10 +2699,7 @@ function toast(msg,type){
 // ════════════════════════════════════════════════
 // CLOCK
 // ════════════════════════════════════════════════
-function updateClock(){
-  const el=g('tb-date');
-  if(el)el.textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'})+' '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-}
+
 
 // ════════════════════════════════════════════════
 // BOOT
