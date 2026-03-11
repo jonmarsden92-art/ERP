@@ -59,15 +59,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .login-setup{margin-top:14px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8;}
 .login-setup strong{color:var(--warn);}
 
-/* ─── SETUP SCREEN (Firebase config) ─── */
-#setup-screen{
-  position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:9500;overflow-y:auto;padding:20px;
-}
-.setup-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:100%;max-width:580px;box-shadow:0 32px 96px rgba(0,0,0,.8);}
-.setup-card h2{font-size:20px;font-weight:800;margin-bottom:6px;}
-.setup-card p{font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.7;}
-.setup-steps{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin:14px 0;font-size:11px;font-family:'DM Mono',monospace;line-height:2;color:var(--text2);}
-.setup-steps .step{color:var(--accent);margin-right:6px;}
+
 
 /* ─── APP SHELL ─── */
 #app{display:none;flex-direction:column;height:100vh;}
@@ -293,43 +285,11 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;line-height:2;}
 .divider{height:1px;background:var(--border);margin:10px 0;}
 
-@media print{#topbar,nav,#toast,#modal-overlay,#sync-bar,#login-screen,#setup-screen{display:none!important;} #app{display:block;} .page{display:flex;} .dn{box-shadow:none;}}
+@media print{#topbar,nav,#toast,#modal-overlay,#sync-bar,#login-screen{display:none!important;} #app{display:block;} .page{display:flex;} .dn{box-shadow:none;}}
 @media(max-width:880px){:root{--nav-w:52px;} .nav-item span.nav-label{display:none;} .nav-sec{display:none;} .nav-item{justify-content:center;padding:10px;}}
 </style>
 </head>
 <body>
-
-<!-- ══════════════════════════════════════════════
-  SETUP SCREEN — First-time Firebase config
-══════════════════════════════════════════════ -->
-<div id="setup-screen">
-  <div class="setup-card">
-    <div style="font-size:22px;font-weight:800;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">KW<span style="color:var(--text2)"> Group</span></div>
-    <h2>First-Time Setup</h2>
-    <p>To enable multi-user access, connect a free <strong style="color:var(--text)">Firebase</strong> project. This takes ~3 minutes.</p>
-    <div class="setup-steps">
-      <div><span class="step">1.</span>Go to <strong style="color:var(--accent)">console.firebase.google.com</strong> → Create project</div>
-      <div><span class="step">2.</span>Build → Authentication → Sign-in method → Enable <strong>Email/Password</strong></div>
-      <div><span class="step">3.</span>Build → Realtime Database → Create database → Start in <strong>test mode</strong></div>
-      <div><span class="step">4.</span>Project Settings → Your apps → Add web app → Copy the config below</div>
-      <div><span class="step">5.</span>In Realtime Database Rules, paste: <code style="color:var(--accent4)">{"rules":{".read":"auth!=null",".write":"auth!=null"}}</code></div>
-    </div>
-    <div class="fg2" style="gap:10px;margin-bottom:10px;">
-      <div class="fld span2"><label>apiKey</label><input id="cfg-apikey" placeholder="AIzaSy..."></div>
-      <div class="fld span2"><label>authDomain</label><input id="cfg-auth" placeholder="yourapp.firebaseapp.com"></div>
-      <div class="fld span2"><label>databaseURL</label><input id="cfg-db" placeholder="https://yourapp-default-rtdb.firebaseio.com"></div>
-      <div class="fld"><label>projectId</label><input id="cfg-proj" placeholder="yourapp"></div>
-      <div class="fld"><label>storageBucket</label><input id="cfg-bucket" placeholder="yourapp.appspot.com"></div>
-      <div class="fld"><label>messagingSenderId</label><input id="cfg-sender" placeholder="123456789"></div>
-      <div class="fld"><label>appId</label><input id="cfg-appid" placeholder="1:123..."></div>
-    </div>
-    <div style="margin-bottom:10px;" class="fld"><label>Admin Email (first user)</label><input id="cfg-admin-email" type="email" placeholder="admin@kingswaygroup.co.uk"></div>
-    <div style="margin-bottom:10px;" class="fld"><label>Admin Password (min 8 chars)</label><input id="cfg-admin-pass" type="password" placeholder="Strong password"></div>
-    <div id="setup-err" class="login-err"></div>
-    <button class="login-btn" onclick="saveSetup()" style="margin-top:10px;">💾 Save & Launch ERP</button>
-    <p style="margin-top:12px;font-size:10px;color:var(--muted);">Config is saved in your browser's localStorage. For production, edit the <code style="color:var(--accent4)">FIREBASE_CONFIG</code> constant at the top of this file's script section.</p>
-  </div>
-</div>
 
 <!-- ══════════════════════════════════════════════
   LOGIN SCREEN
@@ -343,7 +303,7 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
       <div class="login-fld"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div id="login-err" class="login-err"></div>
       <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In →</button>
-      <div class="login-register">New user? <a onclick="showRegisterForm()">Request access / Register</a> | <a onclick="showSetup()">⚙ Setup</a></div>
+      <div class="login-register">New user? <a onclick="showRegisterForm()">Request access / Register</a></div>
     </div>
     <div id="register-form" style="display:none;">
       <div class="login-fld"><label>Full Name</label><input id="r-name" placeholder="Jane Smith"></div>
@@ -581,8 +541,7 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
         <button class="btn ghost" onclick="seedProducts()">⚡ Seed KG Default Products (70+ items)</button>
         <button class="btn ghost" onclick="seedSampleData()">⚡ Seed Sample Orders & Customers</button>
         <div class="divider"></div>
-        <button class="btn ghost" onclick="showSetup()">⚙ Reconfigure Firebase</button>
-        <div class="divider"></div>
+
         <button class="btn danger" onclick="confirmClearAll()">🗑 Clear All Data</button>
       </div>
     </div>
@@ -605,17 +564,17 @@ table.dt{width:100%;border-collapse:collapse;font-size:12px;}
 ══════════════════════════════════════════════════════════ -->
 <script>
 // ════════════════════════════════════════════════
-// FIREBASE CONFIG
+// FIREBASE CONFIG  ← Edit these or use setup UI
 // ════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDymEwTuhkv5Hcq5Oz-5qsEJtQpBfS3Wv4",
   authDomain: "kgerp-b29e4.firebaseapp.com",
+  databaseURL: "https://kgerp-b29e4-default-rtdb.firebaseio.com",
   projectId: "kgerp-b29e4",
   storageBucket: "kgerp-b29e4.firebasestorage.app",
   messagingSenderId: "158977021973",
   appId: "1:158977021973:web:164719dd7b7812ba67d61c",
-  measurementId: "G-D719K4K9NF",
-  databaseURL: "https://kgerp-b29e4-default-rtdb.firebaseio.com" 
+  measurementId: "G-D719K4K9NF"
 };
 
 const ITEM_DB = {
@@ -682,59 +641,7 @@ let _currentDN=null;
 let _orders={}, _products={}, _stock={}, _movements=[], _customers={}, _suppliers={}, _users={}, _dns={}, _auditLog=[], _settings={};
 let _onlineUsers={};
 
-// ════════════════════════════════════════════════
-// SETUP SCREEN
-// ════════════════════════════════════════════════
-function showSetup(){
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('setup-screen').style.display='flex';
-  const saved=loadConfig();
-  if(saved){
-    const f=id=>document.getElementById(id);
-    f('cfg-apikey').value=saved.apiKey||'';f('cfg-auth').value=saved.authDomain||'';
-    f('cfg-db').value=saved.databaseURL||'';f('cfg-proj').value=saved.projectId||'';
-    f('cfg-bucket').value=saved.storageBucket||'';f('cfg-sender').value=saved.messagingSenderId||'';
-    f('cfg-appid').value=saved.appId||'';
-  }
-}
-function loadConfig(){
-  try{const c=localStorage.getItem('kg_fb_cfg');return c?JSON.parse(c):null;}catch{return null;}
-}
-async function saveSetup(){
-  const cfg={
-    apiKey:document.getElementById('cfg-apikey').value.trim(),
-    authDomain:document.getElementById('cfg-auth').value.trim(),
-    databaseURL:document.getElementById('cfg-db').value.trim(),
-    projectId:document.getElementById('cfg-proj').value.trim(),
-    storageBucket:document.getElementById('cfg-bucket').value.trim(),
-    messagingSenderId:document.getElementById('cfg-sender').value.trim(),
-    appId:document.getElementById('cfg-appid').value.trim(),
-  };
-  const adminEmail=document.getElementById('cfg-admin-email').value.trim();
-  const adminPass=document.getElementById('cfg-admin-pass').value;
-  const errEl=document.getElementById('setup-err');
-  if(!cfg.apiKey||!cfg.databaseURL){errEl.textContent='apiKey and databaseURL are required.';return;}
-  if(adminEmail&&adminPass&&adminPass.length<8){errEl.textContent='Admin password must be at least 8 characters.';return;}
-  errEl.textContent='Connecting…';
-  try{
-    localStorage.setItem('kg_fb_cfg',JSON.stringify(cfg));
-    await initFirebase(cfg);
-    // Create first admin if provided
-    if(adminEmail&&adminPass){
-      try{
-        const cred=await auth.createUserWithEmailAndPassword(adminEmail,adminPass);
-        await db.ref('users/'+cred.user.uid).set({uid:cred.user.uid,name:'Admin',email:adminEmail,role:'admin',createdAt:Date.now(),lastSeen:Date.now(),active:true});
-        errEl.textContent='Admin account created!';
-      }catch(e2){
-        if(e2.code==='auth/email-already-in-use')errEl.textContent='Admin email already exists — config saved.';
-        else errEl.textContent=e2.message;
-      }
-    }
-    document.getElementById('setup-screen').style.display='none';
-    document.getElementById('login-screen').style.display='flex';
-    errEl.textContent='';
-  }catch(e){errEl.textContent='Firebase error: '+e.message;localStorage.removeItem('kg_fb_cfg');}
-}
+// Firebase config is hardcoded above
 
 // ════════════════════════════════════════════════
 // FIREBASE INIT
@@ -810,10 +717,8 @@ function friendlyAuthError(code){
 // BOOT — AUTH STATE CHANGE
 // ════════════════════════════════════════════════
 async function boot(){
-  const cfg=loadConfig();
-  if(!cfg){showSetup();document.getElementById('setup-screen').style.display='flex';return;}
   try{
-    await initFirebase(cfg);
+    await initFirebase(FIREBASE_CONFIG);
     auth.onAuthStateChanged(async user=>{
       if(user){
         currentUser=user;
@@ -847,10 +752,8 @@ async function boot(){
       }
     });
   }catch(e){
-    console.error(e);
-    showSetup();
-    document.getElementById('setup-screen').style.display='flex';
-    document.getElementById('setup-err').textContent='Config error: '+e.message;
+    console.error('Firebase error:',e);
+    document.getElementById('login-err').textContent='Connection error: '+e.message;
   }
 }
 
@@ -2138,6 +2041,6 @@ function updateClock(){
 // BOOT
 // ════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',boot);
-    </script> 
-  </body> 
+</script>
+</body>
 </html>
