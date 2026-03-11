@@ -678,6 +678,7 @@ const ITEM_DB = {
 };
 const CATS=['Architrave','Pellets','Intumescent','Fixings','Locks','Access Control','Magnets','Hardware','Closers','Fire Discs','Threshold','Foam & Sealant','Packers','Keys','Other'];
 const ORDER_STATUSES=['Quote','Confirmed','In Production','Ready to Despatch','Despatched','Delivered','Cancelled'];
+const INV_STATUSES=['Draft','Sent','Partial','Paid','Overdue','Void'];
 const DOOR_TYPES=['Single','Double','Leaf&Half'];
 const FIRE=['FD30','FD60','NFR'];
 const FINISHES=['Oak','Ash','Beech','Primed','Acrovyn','Stainless Steel'];
@@ -2214,7 +2215,6 @@ async function exportPricingXLSX(){
 // ════════════════════════════════════════════════
 // INVOICES
 // ════════════════════════════════════════════════
-const INV_STATUSES=['Draft','Sent','Partial','Paid','Overdue','Void'];
 
 function updateInvoiceBadges(){
   const invs=Object.values(_invoices);
