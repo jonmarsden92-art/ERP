@@ -706,18 +706,19 @@ let _onlineUsers={};
 // ════════════════════════════════════════════════
 // FIREBASE INIT
 // ════════════════════════════════════════════════
-async function initFirebase(cfg){
+function initFirebase(cfg){
   try{
-    // Try to get existing default app, else initialise
     firebaseApp=firebase.app();
   }catch(e){
     firebaseApp=firebase.initializeApp(cfg);
   }
   auth=firebaseApp.auth();
   db=firebaseApp.database();
-  // Set persistence so session survives page refresh
-  try{ await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(pe){ console.warn('Persistence not set:',pe); }
 }
+
+// ── Initialise Firebase immediately on script parse (synchronous) ──
+initFirebase(FIREBASE_CONFIG);
+try{ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(pe){ console.warn('Persistence:',pe); }
 
 // ════════════════════════════════════════════════
 // AUTH
@@ -731,6 +732,10 @@ async function doLogin(){
   const btn=document.getElementById('login-btn');
   const err=document.getElementById('login-err');
   if(!email||!pass){err.textContent='Email and password required.';return;}
+  if(!auth){
+    // auth not ready - try re-initialising
+    try{ initFirebase(FIREBASE_CONFIG); }catch(ie){ err.textContent='Firebase failed to load. Please refresh the page.'; return; }
+  }
   btn.disabled=true;btn.textContent='Signing in…';err.textContent='';
   try{
     await auth.signInWithEmailAndPassword(email,pass);
@@ -748,6 +753,7 @@ async function doRegister(){
   const err=document.getElementById('reg-err');
   if(!name||!email||!pass){err.textContent='All fields required.';return;}
   if(pass.length<8){err.textContent='Password must be 8+ characters.';return;}
+  if(!auth){try{initFirebase(FIREBASE_CONFIG);}catch(ie){err.textContent='Firebase failed to load. Please refresh.';return;}}
   err.textContent='Creating account…';
   try{
     const cred=await auth.createUserWithEmailAndPassword(email,pass);
@@ -792,7 +798,8 @@ function friendlyAuthError(code){
 // ════════════════════════════════════════════════
 async function boot(){
   try{
-    await initFirebase(FIREBASE_CONFIG);
+    // Firebase already initialised synchronously above
+    if(!auth){ initFirebase(FIREBASE_CONFIG); }
     auth.onAuthStateChanged(async user=>{
       if(user){
         currentUser=user;
