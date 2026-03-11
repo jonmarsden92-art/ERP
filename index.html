@@ -803,24 +803,44 @@ async function boot(){
     auth.onAuthStateChanged(async user=>{
       if(user){
         currentUser=user;
-        // Load profile
-        const snap=await db.ref('users/'+user.uid).once('value');
-        if(!snap.exists()){
-          // Auto-create viewer profile (e.g. if created externally)
-          await db.ref('users/'+user.uid).set({uid:user.uid,name:user.email.split('@')[0],email:user.email,role:'viewer',createdAt:Date.now(),lastSeen:Date.now(),active:true});
+        try{
+          // Load or create profile
+          let snap;
+          try{
+            snap=await db.ref('users/'+user.uid).once('value');
+          }catch(dbErr){
+            // DB read failed — likely rules not set. Create minimal profile and continue.
+            console.warn('DB read failed (check Firebase rules):', dbErr.message);
+            snap={exists:()=>false, val:()=>null};
+          }
+          if(!snap.exists()){
+            const profile={uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,role:'viewer',createdAt:Date.now(),lastSeen:Date.now(),active:true};
+            try{ await db.ref('users/'+user.uid).set(profile); }catch(e2){ console.warn('Could not write profile:',e2.message); }
+            currentProfile=profile;
+          } else {
+            currentProfile=snap.val()||{};
+          }
+          if(!currentProfile.uid) currentProfile.uid=user.uid;
+          if(!currentProfile.role) currentProfile.role='viewer';
+          if(!currentProfile.name) currentProfile.name=user.email.split('@')[0];
+          // Update lastSeen (non-blocking)
+          try{ db.ref('users/'+user.uid+'/lastSeen').set(Date.now()); }catch(e){}
+          // Set presence (non-blocking)
+          try{
+            const presRef=db.ref('presence/'+user.uid);
+            presRef.set({name:currentProfile.name,role:currentProfile.role,email:currentProfile.email||user.email,ts:Date.now(),session:_sessionId});
+            presRef.onDisconnect().remove();
+          }catch(e){}
+          // Audit (non-blocking)
+          try{ auditLog('LOGIN',{entity:'session',ref:user.email,desc:'Signed in',before:null,after:{session:_sessionId}}); }catch(e){}
+          // Launch app
+          launchApp();
+        }catch(err){
+          console.error('Auth state error:', err);
+          document.getElementById('login-err').textContent='Signed in but failed to load profile: '+err.message+'. Check Firebase Realtime Database rules.';
+          document.getElementById('login-btn').disabled=false;
+          document.getElementById('login-btn').textContent='Sign In →';
         }
-        currentProfile=snap.val()||{uid:user.uid,name:user.displayName||user.email,email:user.email,role:'viewer'};
-        currentProfile.uid=user.uid;
-        // Update lastSeen
-        await db.ref('users/'+user.uid+'/lastSeen').set(Date.now());
-        // Set online presence
-        const presRef=db.ref('presence/'+user.uid);
-        presRef.set({name:currentProfile.name,role:currentProfile.role,email:currentProfile.email,ts:Date.now(),session:_sessionId});
-        presRef.onDisconnect().remove();
-        // Audit login
-        await auditLog('LOGIN',{entity:'session',ref:user.email,desc:`Signed in`,before:null,after:{session:_sessionId}});
-        // Launch app
-        launchApp();
       } else {
         currentUser=null;currentProfile=null;
         document.getElementById('app').classList.remove('ready');
